@@ -3,6 +3,7 @@ const process = require("process");
 const fs = require("fs").promises;
 const { google } = require("googleapis");
 const { authenticate } = require("@google-cloud/local-auth");
+const { request } = require("http");
 
 // Get the authorization URL and redirect the user to it
 const SCOPES = ["https://www.googleapis.com/auth/gmail.modify"];
@@ -79,9 +80,9 @@ async function auto_reply(auth) {
             userId: "me",
             id: messageId,
         });
-        const { to, subject } = threadData.messages[0].payload.headers.reduce(
+        const { from, subject } = threadData.messages[0].payload.headers.reduce(
             (headers, header) => {
-                if (header.name === "To") headers.to = header.value;
+                if (header.name === "From") headers.from = header.value;
                 if (header.name === "Subject") headers.subject = header.value;
                 return headers;
             },
@@ -93,7 +94,7 @@ async function auto_reply(auth) {
         await gmail.users.messages.send({
             userId: "me",
             requestBody: {
-                raw: Buffer.from(`To: ${to}\r\nSubject: Re: ${subject}\r\n\r\n${message}`).toString('base64url'),
+                raw: Buffer.from(`To: ${from}\r\nSubject: Re: ${subject}\r\n\r\n${message}`).toString('base64url'),
                 threadId: messageId,
             },
         });
